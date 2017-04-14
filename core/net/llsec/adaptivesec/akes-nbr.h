@@ -141,7 +141,7 @@ struct akes_nbr {
         };
       };
 
-      struct akes_nbr_tentative *meta;      
+      struct akes_nbr_tentative *meta;
     };
   };
 };

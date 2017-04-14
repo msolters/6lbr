@@ -55,7 +55,7 @@ uip_ipaddr_t uip_hostaddr; /* Needed because it is referenced by dhcpc.c */
 void
 ip64_ipv4_dhcp_init(void)
 {
-  printf("Starting DHCPv4\n");
+  printf("IP64: Starting DHCPv4\n");
   process_start(&ip64_ipv4_dhcp_process, NULL);
 }
 /*---------------------------------------------------------------------------*/
@@ -65,10 +65,10 @@ PROCESS_THREAD(ip64_ipv4_dhcp_process, ev, data)
 
   ip64_dhcpc_init(&ip64_eth_addr, sizeof(ip64_eth_addr));
 
-  PRINTF("Inited\n");
+  PRINTF("IP64: Inited\n");
 
   ip64_dhcpc_request();
-  PRINTF("Requested\n");
+  PRINTF("IP64: Requested\n");
   while(1) {
     PROCESS_WAIT_EVENT();
 
@@ -85,7 +85,7 @@ void
 ip64_dhcpc_configured(const struct ip64_dhcpc_state *s)
 {
   uip_ip6addr_t ip6dnsaddr;
-  PRINTF("DHCP Configured with %d.%d.%d.%d\n",
+  PRINTF("IP64: DHCP Configured with %d.%d.%d.%d\n",
 	 s->ipaddr.u8[0], s->ipaddr.u8[1],
 	 s->ipaddr.u8[2], s->ipaddr.u8[3]);
 
@@ -101,6 +101,7 @@ ip64_dhcpc_configured(const struct ip64_dhcpc_state *s)
       uip_nameserver_update(&ip6dnsaddr, uip_ntohs(s->lease_time[0])*65536ul + uip_ntohs(s->lease_time[1]));
     }
   }
+
 #if CETIC_6LBR
   cetic_6lbr_ip64_dhcpc_configured(s);
 #endif

@@ -121,7 +121,7 @@ prepare_update_command(uint8_t cmd_id,
 static void
 generate_pairwise_key(uint8_t *result, uint8_t *shared_secret)
 {
-  ADAPTIVESEC_SET_KEY(shared_secret);
+  AES_128.set_key(shared_secret);
   AES_128.encrypt(result);
 }
 /*---------------------------------------------------------------------------*/
@@ -254,7 +254,7 @@ on_helloack(uint8_t *payload, int p_flag)
 
   secret = AKES_SCHEME.get_secret_with_helloack_sender(packetbuf_addr(PACKETBUF_ADDR_SENDER));
   if(!secret) {
-    PRINTF("akes: could not get secret with HELLOACK sender\n");
+    PRINTF("akes: No secret with HELLOACK sender\n");
     return CMD_BROKER_ERROR;
   }
 
@@ -293,6 +293,7 @@ on_helloack(uint8_t *payload, int p_flag)
         PRINTF("akes: Awaiting ACK\n");
         return CMD_BROKER_ERROR;
       } else {
+        PRINTF("akes: Skipping HELLOACK\n");
         ctimer_stop(&entry->tentative->meta->wait_timer);
         akes_nbr_delete(entry, AKES_NBR_TENTATIVE);
       }
@@ -325,6 +326,7 @@ on_helloack(uint8_t *payload, int p_flag)
 static void
 send_ack(struct akes_nbr_entry *entry)
 {
+  PRINTF("akes: Sending ACK\n");
   prepare_update_command(AKES_ACK_IDENTIFIER, entry, AKES_NBR_PERMANENT);
   adaptivesec_send_command_frame();
 }
@@ -382,7 +384,7 @@ on_update(uint8_t cmd_id, uint8_t *payload)
 
   entry = akes_nbr_get_sender_entry();
   if(!entry || !entry->permanent) {
-    PRINTF("akes: Received invalid %s\n", (cmd_id == AKES_UPDATE_IDENTIFIER) ? "UPDATE" : "UPDATEACK");
+    PRINTF("akes: Invalid %s\n", (cmd_id == AKES_UPDATE_IDENTIFIER) ? "UPDATE" : "UPDATEACK");
     return CMD_BROKER_ERROR;
   }
 #if ANTI_REPLAY_WITH_SUPPRESSION
@@ -390,7 +392,7 @@ on_update(uint8_t cmd_id, uint8_t *payload)
 #endif /* ANTI_REPLAY_WITH_SUPPRESSION */
   if(ADAPTIVESEC_STRATEGY.verify(entry->permanent)
       != ADAPTIVESEC_VERIFY_SUCCESS) {
-    PRINTF("akes: Received invalid %s\n", (cmd_id == AKES_UPDATE_IDENTIFIER) ? "UPDATE" : "UPDATEACK");
+    PRINTF("akes: Invalid %s\n", (cmd_id == AKES_UPDATE_IDENTIFIER) ? "UPDATE" : "UPDATEACK");
     return CMD_BROKER_ERROR;
   }
 

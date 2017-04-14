@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Hasso-Plattner-Institut.
+ * Copyright (c) 2017, Swedish Institute of Computer Science
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,42 +28,57 @@
  *
  * This file is part of the Contiki operating system.
  *
+ * Author: Oliver Schmidt <ol.sc@web.de>
+ *
  */
 
-/**
- * \file
- *         802.15.4 security implementation, which uses a network-wide key
- * \author
- *         Konrad Krentz <konrad.krentz@gmail.com>
- */
+#include <serial.h>
+#include <stdlib.h>
 
-/**
- * \addtogroup llsec
- * @{
- */
+#include "contiki-net.h"
+#include "sys/log.h"
+#include "lib/error.h"
+#include "lib/config.h"
 
-/**
- * \defgroup noncoresec LLSEC driver using a network-wide key (NONCORESEC)
- * 
- * Noncompromise-resilient 802.15.4 security
- * 
- * @{
- */
+#include "dev/slip.h"
 
-#ifndef NONCORESEC_H_
-#define NONCORESEC_H_
+#if WITH_SLIP
+/*---------------------------------------------------------------------------*/
+void
+slip_arch_init(unsigned long ubr)
+{
+  unsigned err;
 
-#include "net/llsec/llsec.h"
+  err = ser_install(STATIC_DRIVER);
+  if(err == SER_ERR_OK) {
+    err = ser_open((struct ser_params *)config.slip);
+    if(err == SER_ERR_OK)
+      atexit((void (*)(void))ser_close);
+  }
+  if(err != SER_ERR_OK) {
+    err += '0';
+    /* High byte of err serves as string termination. */
+    log_message("Serial init error code: ", (char *)&err);
+    error_exit();
+  }
 
-extern const struct llsec_driver noncoresec_driver;
-extern const struct framer noncoresec_framer;
+  tcpip_set_outputfunc(slip_send);
+}
+/*---------------------------------------------------------------------------*/
+void
+slip_arch_writeb(unsigned char c)
+{
+  while(ser_put(c) == SER_ERR_OVERFLOW)
+    ;
+}
+/*---------------------------------------------------------------------------*/
+void
+slip_arch_poll(void)
+{
+  static unsigned char c;
 
-extern uint32_t noncoresec_invalid_level;
-extern uint32_t noncoresec_nonauthentic;
-extern uint32_t noncoresec_reboot;
-extern uint32_t noncoresec_replayed;
-
-#endif /* NONCORESEC_H_ */
-
-/** @} */
-/** @} */
+  while(ser_get(&c) != SER_ERR_NO_DATA)
+    slip_input_byte(c);
+}
+/*---------------------------------------------------------------------------*/
+#endif /* WITH_SLIP */

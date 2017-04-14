@@ -134,8 +134,9 @@ seed_16_bytes(uint8_t *result)
   byte_pos = 0;
   memset(accumulator, 0, COLUMN_COUNT);
 
+  NETSTACK_RADIO.on();
   for(iq_count = 0; iq_count <= (COLUMN_COUNT * 8 / 2); iq_count++) {
-    wait();
+    //wait();
     NETSTACK_RADIO.get_value(RADIO_PARAM_IQ_LSBS, &iq);
 
     if(!iq_count) {
@@ -151,6 +152,7 @@ seed_16_bytes(uint8_t *result)
       byte_pos++;
     }
   }
+  NETSTACK_RADIO.off();
   extract(result, accumulator);
 }
 /*---------------------------------------------------------------------------*/
